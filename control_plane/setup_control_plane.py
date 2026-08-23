@@ -15,14 +15,14 @@ def run_cmd(cmd, check=True):
 
 def main():
     print("=" * 65)
-    print("      RASPBERRY PI 4 - AUTOMATED CONTROL_PLANE SETUP SCRIPT")
+    print("      RASPBERRY PI 4 - NATIVE CONTROL-PLANE SETUP SCRIPT")
     print("=" * 65)
     print("This script will build your local orchestration and assistant stack.\n")
 
     # Step 1: Collect User Inputs
     mac_ip = input("Enter the fixed local Wi-Fi IP of your Mac (compute_node): ").strip()
     if not mac_ip:
-        print("[-] Errors: Mac IP is required to link the inference backend. Exiting.")
+        print("[-] Error: Mac IP is required to link the inference backend. Exiting.")
         sys.exit(1)
 
     print("\n[1/4] Establishing structural workspace directories...")
@@ -38,21 +38,26 @@ def main():
         os.makedirs(path, exist_ok=True)
         print(f"    [+] Created: {path}")
 
-    # Step 2: Install Docker Engine
+    # Step 2: Native Docker Installation
     print("\n[2/4] Verifying local Docker runtime status...")
     if not shutil.which("docker"):
-        print("    -> Docker not detected. Fetching official install scripts...")
-        run_cmd("curl -fsSL https://docker.com -o get-docker.sh")
-        success, out = run_cmd("sudo sh get-docker.sh")
-        if not success:
-            print(f"[-] Docker installation failed: {out}")
-            sys.exit(1)
+        print("    -> Docker not detected. Initializing native repository mirrors...")
         
-        # Add current user to Docker group to eliminate sudo requirements
-        user = os.getlogin()
+        print("    -> Updating system package listings...")
+        run_cmd("sudo apt update")
+        
+        print("    -> Installing Docker engine packages natively...")
+        # Installs native system engine alongside modern compose v2 specifications
+        success, out = run_cmd("sudo apt install -y docker.io docker-compose-v2")
+        if not success:
+            print(f"[-] Native Docker installation failed: {out}")
+            sys.exit(1)
+            
+        print("    -> Injecting user configurations into system groups...")
+        # Dynamically grabs active session name to add to the docker group access matrix
+        user = os.getlogin() if os.getlogin() else "pi"
         run_cmd(f"sudo usermod -aG docker {user}")
         print("[+] Docker runtime successfully deployed to system binaries.")
-        print("[!] Group modifications require a logout/login or terminal restart to apply.")
     else:
         print("[+] Docker environment is fully active.")
 
@@ -135,20 +140,16 @@ volumes:
     
     # Change context directory to the control_plane workspace
     os.chdir(control_dir)
-    success, out = run_cmd("docker compose up -d")
+    
+    # Executing through sudo fallback to ensure permissions handle fresh service boots safely
+    success, out = run_cmd("sudo docker compose up -d")
     
     if success:
         print("[+] Containers spun up successfully!")
     else:
-        print("[-] Notice: Quick-boot failed. If this is a new Docker install, permissions need a reset.")
-        print("    -> Attempting execution fallback via sudo privilege layers...")
-        s_fallback, o_fallback = run_cmd("sudo docker compose up -d")
-        if s_fallback:
-            print("[+] Containers successfully deployed using system authority.")
-        else:
-            print(f"[-] Final deployment failure: {o_fallback}")
-            print("[*] Troubleshooting: Please log out and back in, then run 'docker compose up -d' inside ~/hybrid_mesh_ai/control_plane")
-            sys.exit(1)
+        print(f"[-] Final deployment failure: {out}")
+        print("[*] Troubleshooting: Please verify hardware memory, then run 'sudo docker compose up -d' manually.")
+        sys.exit(1)
 
     print("\n" + "=" * 65)
     print("SETUP TERMINATED: CONTROL_PLANE ECOSYSTEM IS STANDING PROUD!")
