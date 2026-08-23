@@ -48,7 +48,7 @@ def main():
         
         print("    -> Installing Docker engine packages natively...")
         # Installs native system engine alongside modern compose v2 specifications
-        success, out = run_cmd("sudo apt install -y docker.io docker-compose-v2")
+        success, out = run_cmd("sudo apt install -y docker.io docker-compose-plugin")
         if not success:
             print(f"[-] Native Docker installation failed: {out}")
             sys.exit(1)
