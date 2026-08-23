@@ -1,0 +1,39 @@
+version: '3.8'
+
+networks:
+  ai_shared_network:
+    driver: bridge
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: local_n8n_orchestrator
+    restart: always
+    ports:
+      - "5678:5678"
+    networks:
+      - ai_shared_network
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=48
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /home/pi/hybrid_mesh_ai/vault:/data/storage
+
+  nanobot:
+    image: ghcr.io/hkuds/nanobot:latest
+    container_name: local_nanobot_agent
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - ai_shared_network
+    volumes:
+      - /home/pi/hybrid_mesh_ai/control_plane/nanobot_config.json:/app/config.json
+      - /home/pi/hybrid_mesh_ai/vault:/app/storage
+
+volumes:
+  n8n_data:

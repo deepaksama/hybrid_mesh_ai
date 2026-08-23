@@ -2,7 +2,6 @@
 import os
 import sys
 import subprocess
-import shutil
 import json
 
 def run_cmd(cmd, check=True):
@@ -15,76 +14,29 @@ def run_cmd(cmd, check=True):
 
 def main():
     print("=" * 65)
-    print("      RASPBERRY PI 4 - NATIVE HYBRID-AI CONTROL-PLANE SETUP")
+    print("   RASPBERRY PI 4 - SIMPLIFIED SYSTEM DEPLOYMENT SCRIPT")
     print("=" * 65)
-    print("This script will build your local orchestration and assistant stack.\n")
 
-    # Step 1: Collect User Inputs
+    # Step 1: Collect your Mac Node IP
     mac_ip = input("Enter the fixed local Wi-Fi IP of your Mac (compute_node): ").strip()
     if not mac_ip:
         print("[-] Error: Mac IP is required to link the inference backend. Exiting.")
         sys.exit(1)
 
-    print("\n[1/4] Establishing structural workspace directories...")
-    base_dir = os.path.expanduser("~/hybrid_mesh_ai")
+    # Step 2: Set up absolute system directory paths
+    base_dir = os.path.abspath(os.path.expanduser("~/hybrid_mesh_ai"))
     control_dir = os.path.join(base_dir, "control_plane")
+    compose_path = os.path.join(control_dir, "docker-compose.yml")
     vault_base = os.path.join(base_dir, "vault")
-    sub_directories = ["documentation", "mail_dumps", "research", "external_hdd"]
 
-    os.makedirs(control_dir, exist_ok=True)
-    for folder in sub_directories:
-        path = os.path.join(vault_base, folder)
-        os.makedirs(path, exist_ok=True)
-        print(f"    [+] Created: {path}")
+    # Double check that your compose blueprint actually exists before running
+    if not os.path.exists(compose_path):
+        print(f"[-] Error: Could not find docker-compose.yml at {compose_path}.")
+        print("Please verify the file path or regenerate it before running this script.")
+        sys.exit(1)
 
-    # Step 2: Native Docker & Binary Compose Installation
-    print("\n[2/4] Verifying local Docker runtime status...")
-    if not shutil.which("docker"):
-        print("    -> Docker not detected. Initializing system package mirrors...")
-        run_cmd("sudo apt update")
-        
-        print("    -> Installing core native docker engine...")
-        success, out = run_cmd("sudo apt install -y docker.io")
-        if not success:
-            print(f"[-] Native Docker installation failed: {out}")
-            sys.exit(1)
-            
-        print("    -> Injecting user configurations into system groups...")
-        user = os.getlogin() if os.getlogin() else "pi"
-        run_cmd(f"sudo usermod -aG docker {user}")
-        print("[+] Docker core runtime deployed.")
-    else:
-        print("[+] Docker environment core is already active.")
-
-    # Explicit Binary Deployment for Docker Compose V2 (ARM64)
-    print("Verifying Docker Compose command plugin mapping...")
-    plugin_dir = "/usr/local/lib/docker/cli-plugins"
-    plugin_path = os.path.join(plugin_dir, "docker-compose")
-    
-    # Check if the command 'docker compose' works natively
-    _, version_check = run_cmd("docker compose version")
-    if "Docker Compose version" not in version_check:
-        print("    -> Compose plugin missing. Downloading standalone ARM64 Linux binary...")
-        run_cmd(f"sudo mkdir -p {plugin_dir}")
-        
-        # Pulls stable ARM64/Aarch64 production binary release directly from official source
-        compose_url = "https://github.com"
-        download_cmd = f"sudo curl -SL {compose_url} -o {plugin_path}"
-        
-        success, out = run_cmd(download_cmd)
-        if not success:
-            print(f"[-] Failed to fetch Compose binary: {out}")
-            sys.exit(1)
-            
-        print("    -> Enforcing file execution authorization maps...")
-        run_cmd(f"sudo chmod +x {plugin_path}")
-        print("[+] Docker Compose v2 plugin linked successfully!")
-    else:
-        print("[+] Docker Compose v2 environment is active.")
-
-    # Step 3: Write Configuration Files
-    print("\n[3/4] Writing minimalist configuration maps to storage layout...")
-    
+    print("\n[1/2] Updating assistant connection configuration profiles...")
+    # Update only the NanoBot JSON configuration with the current Mac IP address
     nanobot_config = {
         "agents": {
             "defaults": {
@@ -103,72 +55,25 @@ def main():
     nanobot_conf_path = os.path.join(control_dir, "nanobot_config.json")
     with open(nanobot_conf_path, "w") as f:
         json.dump(nanobot_config, f, indent=2)
-    print(f"    [+] Generated: {nanobot_conf_path}")
+    print(f"    [+] Updated backend endpoint pointing to: http://{mac_ip}:11434")
 
-    docker_compose_content = f"""version: '3.8'
-
-networks:
-  ai_shared_network:
-    driver: bridge
-
-services:
-  n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
-    container_name: local_n8n_orchestrator
-    restart: always
-    ports:
-      - "5678:5678"
-    networks:
-      - ai_shared_network
-    environment:
-      - N8N_HOST=0.0.0.0
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - EXECUTIONS_DATA_PRUNE=true
-      - EXECUTIONS_DATA_MAX_AGE=48
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - {vault_base}:/data/storage
-
-  nanobot:
-    image: ghcr.io/hkuds/nanobot:latest
-    container_name: local_nanobot_agent
-    restart: always
-    ports:
-      - "8000:8000"
-    networks:
-      - ai_shared_network
-    volumes:
-      - {nanobot_conf_path}:/app/config.json
-      - {vault_base}:/app/storage
-
-volumes:
-  n8n_data:
-"""
+    # Step 3: Natively boot up the containers using your existing file
+    print("\n[2/2] Launching system containers via native compose engine...")
+    print("    -> Initializing image layers in background task windows...")
     
-    compose_path = os.path.join(control_dir, "docker-compose.yml")
-    with open(compose_path, "w") as f:
-        f.write(docker_compose_content)
-    print(f"    [+] Generated: {compose_path}")
-
-    # Step 4: Boot Containers
-    print("\n[4/4] Deploying applications into background runtime...")
-    print("    -> Pulling container configurations from network layers...")
-    os.chdir(control_dir)
+    boot_cmd = f"sudo docker-compose -f {compose_path} up -d"
+    success, out = run_cmd(boot_cmd)
     
-    success, out = run_cmd("sudo docker compose up -d")
     if success:
-        print("[+] Containers spun up successfully!")
+        print("\n" + "=" * 65)
+        print("SUCCESS: SYSTEM COMPLETELY CONFIGURED AND ONLINE!")
+        print("=" * 65)
+        print(f"-> Access your Conversational Research Panel: http://localhost:8000")
+        print(f"-> Access your Visual Task-Automation Mesh: http://localhost:5678")
+        print(f"\nAll data paths safely bound to your vault folder: {vault_base}")
     else:
-        print(f"[-] Final deployment failure: {out}")
+        print(f"[-] Final deployment execution layer failed: {out}")
         sys.exit(1)
-
-    print("\n" + "=" * 65)
-    print("SETUP TERMINATED: CONTROL_PLANE ECOSYSTEM IS STANDING PROUD!")
-    print("=" * 65)
-    print(f"-> Access your Conversational Research Panel: http://localhost:8000")
-    print(f"-> Access your Visual Task-Automation Mesh: http://localhost:5678")
-    print(f"\nAll files mapped seamlessly into your shared vault: {vault_base}")
 
 if __name__ == "__main__":
     main()
