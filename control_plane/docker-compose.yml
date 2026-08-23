@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   ai_shared_network:
     driver: bridge
@@ -22,18 +20,6 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
       - /home/pi/hybrid_mesh_ai/vault:/data/storage
-
-  nanobot:
-    image: ghcr.io/hkuds/nanobot:latest
-    container_name: local_nanobot_agent
-    restart: always
-    ports:
-      - "8000:8000"
-    networks:
-      - ai_shared_network
-    volumes:
-      - /home/pi/hybrid_mesh_ai/control_plane/nanobot_config.json:/app/config.json
-      - /home/pi/hybrid_mesh_ai/vault:/app/storage
 
 volumes:
   n8n_data:
