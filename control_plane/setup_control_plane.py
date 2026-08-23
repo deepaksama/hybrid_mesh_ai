@@ -15,7 +15,7 @@ def run_cmd(cmd, check=True):
 
 def main():
     print("=" * 65)
-    print("      RASPBERRY PI 4 - NATIVE CONTROL-PLANE SETUP SCRIPT")
+    print("      RASPBERRY PI 4 - NATIVE HYBRID-AI CONTROL-PLANE SETUP")
     print("=" * 65)
     print("This script will build your local orchestration and assistant stack.\n")
 
@@ -26,7 +26,6 @@ def main():
         sys.exit(1)
 
     print("\n[1/4] Establishing structural workspace directories...")
-    # Base configuration directories matching your exact naming preferences
     base_dir = os.path.expanduser("~/hybrid_mesh_ai")
     control_dir = os.path.join(base_dir, "control_plane")
     vault_base = os.path.join(base_dir, "vault")
@@ -38,33 +37,54 @@ def main():
         os.makedirs(path, exist_ok=True)
         print(f"    [+] Created: {path}")
 
-    # Step 2: Native Docker Installation
+    # Step 2: Native Docker & Binary Compose Installation
     print("\n[2/4] Verifying local Docker runtime status...")
     if not shutil.which("docker"):
-        print("    -> Docker not detected. Initializing native repository mirrors...")
-        
-        print("    -> Updating system package listings...")
+        print("    -> Docker not detected. Initializing system package mirrors...")
         run_cmd("sudo apt update")
         
-        print("    -> Installing Docker engine packages natively...")
-        # Installs native system engine alongside modern compose v2 specifications
-        success, out = run_cmd("sudo apt install -y docker.io docker-compose-plugin")
+        print("    -> Installing core native docker engine...")
+        success, out = run_cmd("sudo apt install -y docker.io")
         if not success:
             print(f"[-] Native Docker installation failed: {out}")
             sys.exit(1)
             
         print("    -> Injecting user configurations into system groups...")
-        # Dynamically grabs active session name to add to the docker group access matrix
         user = os.getlogin() if os.getlogin() else "pi"
         run_cmd(f"sudo usermod -aG docker {user}")
-        print("[+] Docker runtime successfully deployed to system binaries.")
+        print("[+] Docker core runtime deployed.")
     else:
-        print("[+] Docker environment is fully active.")
+        print("[+] Docker environment core is already active.")
+
+    # Explicit Binary Deployment for Docker Compose V2 (ARM64)
+    print("Verifying Docker Compose command plugin mapping...")
+    plugin_dir = "/usr/local/lib/docker/cli-plugins"
+    plugin_path = os.path.join(plugin_dir, "docker-compose")
+    
+    # Check if the command 'docker compose' works natively
+    _, version_check = run_cmd("docker compose version")
+    if "Docker Compose version" not in version_check:
+        print("    -> Compose plugin missing. Downloading standalone ARM64 Linux binary...")
+        run_cmd(f"sudo mkdir -p {plugin_dir}")
+        
+        # Pulls stable ARM64/Aarch64 production binary release directly from official source
+        compose_url = "https://github.com"
+        download_cmd = f"sudo curl -SL {compose_url} -o {plugin_path}"
+        
+        success, out = run_cmd(download_cmd)
+        if not success:
+            print(f"[-] Failed to fetch Compose binary: {out}")
+            sys.exit(1)
+            
+        print("    -> Enforcing file execution authorization maps...")
+        run_cmd(f"sudo chmod +x {plugin_path}")
+        print("[+] Docker Compose v2 plugin linked successfully!")
+    else:
+        print("[+] Docker Compose v2 environment is active.")
 
     # Step 3: Write Configuration Files
     print("\n[3/4] Writing minimalist configuration maps to storage layout...")
     
-    # 3a. Write NanoBot Config JSON (Placed inside control_plane/)
     nanobot_config = {
         "agents": {
             "defaults": {
@@ -85,7 +105,6 @@ def main():
         json.dump(nanobot_config, f, indent=2)
     print(f"    [+] Generated: {nanobot_conf_path}")
 
-    # 3b. Write Docker Compose Template (Placed inside control_plane/)
     docker_compose_content = f"""version: '3.8'
 
 networks:
@@ -93,7 +112,6 @@ networks:
     driver: bridge
 
 services:
-  # Logistics & Event Automation Layer
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: local_n8n_orchestrator
@@ -112,7 +130,6 @@ services:
       - n8n_data:/home/node/.n8n
       - {vault_base}:/data/storage
 
-  # Conversational Interface Layer
   nanobot:
     image: ghcr.io/hkuds/nanobot:latest
     container_name: local_nanobot_agent
@@ -137,18 +154,13 @@ volumes:
     # Step 4: Boot Containers
     print("\n[4/4] Deploying applications into background runtime...")
     print("    -> Pulling container configurations from network layers...")
-    
-    # Change context directory to the control_plane workspace
     os.chdir(control_dir)
     
-    # Executing through sudo fallback to ensure permissions handle fresh service boots safely
     success, out = run_cmd("sudo docker compose up -d")
-    
     if success:
         print("[+] Containers spun up successfully!")
     else:
         print(f"[-] Final deployment failure: {out}")
-        print("[*] Troubleshooting: Please verify hardware memory, then run 'sudo docker compose up -d' manually.")
         sys.exit(1)
 
     print("\n" + "=" * 65)
