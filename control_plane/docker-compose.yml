@@ -9,6 +9,7 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - N8N_SECURE_COOKIE=false
+      - N8N_COOKIES_SAME_SITE=lax
     volumes:
       - n8n_data:/home/node/.n8n
       - /home/dsama/hybrid_mesh_ai/vault:/data/storage
