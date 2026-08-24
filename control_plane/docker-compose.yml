@@ -10,7 +10,8 @@ services:
       - N8N_PROTOCOL=http
       - N8N_SECURE_COOKIE=false
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
-      - NODES_EXCLUDE="[]"          # <-- ADD THIS LINE HERE TO UNHIDE THE NODE
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - NODES_EXCLUDE="[]" 
     volumes:
       - n8n_data:/home/node/.n8n
       - /home/pi/hybrid_mesh_ai/vault:/data/storage
