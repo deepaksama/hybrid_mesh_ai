@@ -11,7 +11,6 @@ services:
       - N8N_SECURE_COOKIE=false
     volumes:
       - n8n_data:/home/node/.n8n
-      # Links your exact architectural vault directories natively
       - /home/dsama/hybrid_mesh_ai/vault:/data/storage
       - /home/dsama/hybrid_mesh_ai/vault/documentation:/files
 
