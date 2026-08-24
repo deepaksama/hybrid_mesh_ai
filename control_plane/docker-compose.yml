@@ -1,19 +1,19 @@
 services:
   n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
+    image: docker.n8n.io/n8nio/n8n:stable
     container_name: local_n8n_orchestrator
-    restart: always
-    network_mode: "host"  # Bypasses the Docker sandbox to talk to your Wi-Fi directly
+    restart: unless-stopped
+    network_mode: "host"
     environment:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - N8N_SECURE_COOKIE=false
-      - EXECUTIONS_DATA_PRUNE=true
-      - EXECUTIONS_DATA_MAX_AGE=48
     volumes:
       - n8n_data:/home/node/.n8n
-      - /home/pi/hybrid_mesh_ai/vault:/data/storage
+      # Links your exact architectural vault directories natively
+      - /home/dsama/hybrid_mesh_ai/vault:/data/storage
+      - /home/dsama/hybrid_mesh_ai/vault/documentation:/files
 
 volumes:
   n8n_data:
