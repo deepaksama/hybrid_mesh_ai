@@ -9,11 +9,11 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - N8N_SECURE_COOKIE=false
-      - N8N_COOKIES_SAME_SITE=lax
+      - NODES_EXCLUDE="[]"          # <-- ADD THIS LINE HERE TO UNHIDE THE NODE
     volumes:
       - n8n_data:/home/node/.n8n
-      - /home/dsama/hybrid_mesh_ai/vault:/data/storage
-      - /home/dsama/hybrid_mesh_ai/vault/documentation:/files
+      - /home/pi/hybrid_mesh_ai/vault:/data/storage
+      - /home/pi/hybrid_mesh_ai/vault/documentation:/files
 
 volumes:
   n8n_data:
