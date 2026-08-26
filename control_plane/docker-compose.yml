@@ -2,8 +2,7 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:stable
     container_name: local_n8n_orchestrator
-    # Tells Docker to run using your exact local user account permissions (UID 1000)
-    user: "1000:1000"
+    user: "root"
     restart: unless-stopped
     network_mode: "host"
     environment:
@@ -15,9 +14,7 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
     volumes:
-      - n8n_data:/home/node/.n8n
+      # Mounts your workspace database directly into your repository folder for tracking safety
+      - /home/dsama/HardDrive/Repositories/hybrid_mesh_ai/control_plane/n8n_local_data:/home/node/.n8n
       - /home/dsama/HardDrive/Repositories/hybrid_mesh_ai/vault:/data/storage
       - /home/dsama/HardDrive/Repositories/hybrid_mesh_ai/vault/documentation:/files
-
-volumes:
-  n8n_data:
