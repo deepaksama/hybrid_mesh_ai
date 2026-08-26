@@ -2,6 +2,7 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:stable
     container_name: local_n8n_orchestrator
+    user: "root"                                 # <-- ADD THIS LINE HERE
     restart: unless-stopped
     network_mode: "host"
     environment:
@@ -9,13 +10,13 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - N8N_SECURE_COOKIE=false
+      - NODES_EXCLUDE="[]"
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
-      - NODES_EXCLUDE="[]" 
     volumes:
       - n8n_data:/home/node/.n8n
-      - /home/pi/hybrid_mesh_ai/vault:/data/storage
-      - /home/pi/hybrid_mesh_ai/vault/documentation:/files
+      - /home/dsama/HardDrive/Repositories/hybrid_mesh_ai/vault:/data/storage
+      - /home/dsama/HardDrive/Repositories/hybrid_mesh_ai/vault/documentation:/files
 
 volumes:
   n8n_data:
