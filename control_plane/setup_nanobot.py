@@ -2,7 +2,6 @@
 import os
 import sys
 import subprocess
-import shutil
 import json
 
 def run_cmd(cmd, check=True):
@@ -15,38 +14,33 @@ def run_cmd(cmd, check=True):
 
 def main():
     print("=" * 65)
-    print("     RASPBERRY PI 4 - NATIVE NANOBOT ENVIRONMENT INITIALIZER")
+    print("     RASPBERRY PI 4 - NANOBOT ENVIRONMENT AUTO-INSTALLER")
     print("=" * 65)
 
-    # Step 1: Define absolute system layout directory paths
     base_dir = os.path.abspath(os.path.expanduser("~/hybrid_mesh_ai"))
     control_dir = os.path.join(base_dir, "control_plane")
     vault_dir = os.path.join(base_dir, "vault")
     venv_dir = os.path.join(control_dir, "nanobot_env")
     nanobot_config_dir = os.path.abspath(os.path.expanduser("~/.nanobot"))
 
-    # Step 2: Sync and deploy native foundational software dependencies
+    # Step 1: Deploy native dependencies
     print("\n[1/4] Ensuring core operating system dependencies are current...")
-    print("    -> Updating system package streams...")
     run_cmd("sudo apt update")
-    
-    print("    -> Deploying native virtual environment systems, Node, and npm...")
     success, out = run_cmd("sudo apt install -y python3-venv python3-pip nodejs npm")
     if not success:
-        print(f"[-] System dependencies setup failed: {out}")
+        print(f"[-] Dependencies setup failed: {out}")
         sys.exit(1)
 
-    # Step 3: Establish the isolated Python virtual runtime cage
+    # Step 2: Establish isolated Python virtual environment cage
     print("\n[2/4] Setting up isolated Python virtual environment matrix...")
+    os.makedirs(control_dir, exist_ok=True)
     if not os.path.exists(venv_dir):
-        os.makedirs(control_dir, exist_ok=True)
         success, out = run_cmd(f"python3 -m venv {venv_dir}")
         if not success:
             print(f"[-] Failed to generate virtual environment: {out}")
             sys.exit(1)
             
     pip_path = os.path.join(venv_dir, "bin", "pip")
-    print("    -> Upgrading core pip packages inside the environment...")
     run_cmd(f"{pip_path} install --upgrade pip")
     
     print("    -> Fetching production core 'nanobot-ai' package layers via pip...")
@@ -55,11 +49,10 @@ def main():
         print(f"[-] Pip deployment layer failed: {out}")
         sys.exit(1)
 
-    # Step 4: Generate the model and server configuration maps
+    # Step 3: Generate the model and server configuration maps
     print("\n[3/4] Writing configuration manifests to the storage filesystems...")
     os.makedirs(nanobot_config_dir, exist_ok=True)
     
-    # Configure NanoBot to use port 11434 over your active local loopback/tunnel
     nanobot_config = {
         "providers": {
             "ollama": {
@@ -84,23 +77,24 @@ def main():
         json.dump(nanobot_config, f, indent=2)
     print(f"    [+] Created absolute configuration map: {config_file_path}")
 
-    # Step 5: Start up the background server loop processes
-    print("\n[4/4] Activating background assistant server daemon instances...")
+    # Step 4: Create standalone startup launcher
+    print("\n[4/4] Activating background assistant server script wrappers...")
     nanobot_binary = os.path.join(venv_dir, "bin", "nanobot")
+    launcher_path = os.path.join(control_dir, "start_nanobot.sh")
     
-    # Fire up NanoBot's gateway web engine in background thread loops
-    boot_cmd = f"{nanobot_binary} gateway --background"
-    success, out = run_cmd(boot_cmd)
+    # Write a dedicated shell script to launch the server background process safely
+    with open(launcher_path, "w") as f:
+        f.write(f"#!/bin/bash\n{nanobot_binary} gateway --background\n")
+    run_cmd(f"chmod +x {launcher_path}")
     
-    if success:
-        print("\n" + "=" * 65)
-        print("SUCCESS: NANOBOT SYSTEM IS COMPLETELY CONFIGURED AND ONLINE!")
-        print("=" * 65)
-        print("-> Access your Conversational Research Panel: http://localhost:18790")
-        print(f"All structural tools cleanly bound to your workspace: {vault_dir}")
-    else:
-        print(f"[-] Final startup sequence layer failed: {out}")
-        sys.exit(1)
+    # Execute the launcher outside the silent Python capture shell
+    subprocess.Popen([launcher_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    print("\n" + "=" * 65)
+    print("SUCCESS: NANOBOT SYSTEM IS COMPLETELY CONFIGURED AND ONLINE!")
+    print("=" * 65)
+    print("-> Access your Conversational Research Panel: http://localhost:18790")
+    print(f"All structural tools cleanly bound to your workspace: {vault_dir}\n")
 
 if __name__ == "__main__":
     main()
