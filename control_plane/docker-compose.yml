@@ -2,7 +2,8 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:stable
     container_name: local_n8n_orchestrator
-    user: "root"                                 # <-- ADD THIS LINE HERE
+    # Tells Docker to run using your exact local user account permissions (UID 1000)
+    user: "1000:1000"
     restart: unless-stopped
     network_mode: "host"
     environment:
